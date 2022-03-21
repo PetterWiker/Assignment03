@@ -21,17 +21,15 @@ class Ply:
 
 class Laminate:
 
-    def __init__(self, layup: list[Ply], name: str, cross_section: float) -> None:
+    def __init__(self, layup: list[Ply], name: str) -> None:
         """
         Class for modeling the behaviour of a laminate comprised of a stack of plies (using the "Ply"-class).
         :param layup: A list of "Ply"-objects.
         :param name: A chosen name for the laminate.
-        :param cross_section: The cross section of the laminate.
         """
         self.is_broken = False
         self.layup = layup
         self.name = name
-        self.cross_section = cross_section
         self.thickness = self.compute_thickness()
         self.mass = self.compute_mass()
         self.A = self.compute_A()
@@ -46,6 +44,9 @@ class Laminate:
         return sum([ply.thickness for ply in self.layup])
 
     def compute_mass(self) -> float:
+        """
+        :return: The mass density through thickness (mass per unit width and height) [g/mm^2].
+        """
         return sum([ply.material["rho"]*ply.thickness for ply in self.layup])
 
     def compute_A(self) -> np.array:
@@ -95,5 +96,10 @@ class Laminate:
 
     def update_state(self, **kwargs) -> None:
         self.loads, self.defor = laminatelib.solveLaminateLoadCase(self.ABD, **kwargs)
+        self.check_failure_conditions()
+        pass
+
+    def check_failure_conditions(self):
+
         pass
 
