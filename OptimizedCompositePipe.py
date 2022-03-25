@@ -1,10 +1,16 @@
 import numpy as np
+import copy
 from Laminate import Laminate
 
 
 class OptimizedCompositePipe:
 
-    def __init__(self, material: Laminate, internal_radius: float, thickness: float, service_load: dict[str]) -> None:
+    def __init__(self,
+                 material: Laminate,
+                 internal_radius: float,
+                 thickness: float,
+                 service_load: dict[str],
+                 progressive_failure: bool) -> None:
         """
         Recursive class for optimizing a composite pipe with regards to material used, i.e. mass.
         :param material: The "Laminate" object making out the composite pipe.
@@ -12,13 +18,15 @@ class OptimizedCompositePipe:
         :param thickness: The thickness of the pipe.
         :param service_load: The service load case that the pipe should be optimized for.
         """
-        self.material = material
+        self.material = copy.deepcopy(material)
         self.internal_radius = internal_radius
         self.thickness = thickness
         self.thickness_history = [self.thickness]
 
         self.N = self.compute_N(service_load)
         self.material.update_state(load=self.N)
+
+        self.progressive_failure = progressive_failure
 
         self.optimized_thickness, self.failure_mechanism = self.find_optimized_thickness()
         self.optimized_mass_density = self.material.compute_mass()
@@ -33,38 +41,50 @@ class OptimizedCompositePipe:
         return N
 
     def find_optimized_thickness(self) -> tuple[float, str]:
+
         fEs = []
         for ply in self.material.layup:
             ply.compute_exposure_factors()
             fEs.append(ply.fE_FF)
-            if not ply.is_IFF_damaged:
+            if not ply.is_IFF_damaged and self.progressive_failure:
                 fEs.append(ply.fE_IFF)
 
         # Calculate a "thickness adjustment factor"
-        fE_deform = max(self.material.defor)/0.05
         fE_dam_max = max(fEs)
-        taf = max([fE_deform, fE_dam_max])
+        taf = fE_dam_max
+
+        fE_deform = max(self.material.defor)/0.05
+        min_deform_limited_thickness = self.thickness*fE_deform
+
+        if self.thickness*taf < min_deform_limited_thickness:
+            self.update_thickness(adjustment_factor=fE_deform)
+            failure_mechanism = "max_deform"
+            if self.material.is_FF_damaged:
+                failure_mechanism += "+FF"
+            if self.material.is_IFF_damaged:
+                failure_mechanism += "+IFF"
+            return min(self.thickness_history), failure_mechanism
 
         for ply in self.material.layup:
-            ply.fE_FF *= 1/taf
-            ply.fE_IFF *= 1/taf
-            fE_deform *= 1/taf
+            ply.fE_FF = ply.fE_FF/taf
+            ply.fE_IFF = ply.fE_IFF/taf
 
-            if round(ply.fE_FF, 5) >= 1: #> ply.fE_IFF:
-                if ply.is_FF_damaged:
+            if round(ply.fE_FF, 5) >= 1:
+                if ply.is_FF_damaged or not self.progressive_failure:
                     self.update_thickness(adjustment_factor=taf)
-                    return min(self.thickness_history), "fiber_failure"
-                else:  # if ply is not already broken
+                    failure_mechanism = "FF"
+                    if self.material.is_IFF_damaged:
+                        failure_mechanism += "+IFF"
+                    return min(self.thickness_history), failure_mechanism
+                else:
                     ply.is_FF_damaged = True
+                    self.material.is_FF_damaged = True
                     ply.degrade_stiffness()
 
-            elif (round(ply.fE_IFF, 5) >= 1 > ply.fE_FF) and not ply.is_IFF_damaged:
+            elif (round(ply.fE_IFF, 5) >= 1) and self.progressive_failure and not ply.is_IFF_damaged:
                 ply.is_IFF_damaged = True
+                self.material.is_IFF_damaged = True
                 ply.degrade_compressive_strength()
-
-            elif round(fE_deform, 5) >= 0.05:
-                self.update_thickness(adjustment_factor=taf)
-                return min(self.thickness_history), "max_deformation"
 
         self.update_thickness(adjustment_factor=taf)
         self.material.update_state(load=self.N)

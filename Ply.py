@@ -25,13 +25,13 @@ class Ply:
         self.fE_IFF = 0
         pass
 
-    def degrade_stiffness(self, degradation_factor: float = 0.9) -> None:
+    def degrade_stiffness(self, degradation_factor: float = 0.1) -> None:
         self.material["E2"] *= degradation_factor
         self.material["G12"] *= degradation_factor
         self.Q = laminatelib.Q2D(self.material)
         pass
 
-    def degrade_compressive_strength(self, reduction_factor: float = 0.1) -> None:
+    def degrade_compressive_strength(self, reduction_factor: float = 0.9) -> None:
         self.material["XC"] *= reduction_factor
         self.Q = laminatelib.Q2D(self.material)
         pass
@@ -46,7 +46,7 @@ class Ply:
         self.strain_state = strains
         pass
 
-    def fE_MS2D(self, load_resistance_factor: float = 1) -> float:
+    def fE_MS2D(self, load_resistance_factor: float = 3) -> float:
         """
         Calculates the FF exposure factor using the Maximum Stress criterion.
         :param load_resistance_factor:

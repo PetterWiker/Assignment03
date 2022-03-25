@@ -19,6 +19,8 @@ class Laminate:
         self.mass = self.compute_mass()
         self.A = self.compute_A()
         self.load, self.defor = [], []
+        self.is_IFF_damaged = False
+        self.is_FF_damaged = False
         pass
 
     def compute_thickness(self) -> float:
