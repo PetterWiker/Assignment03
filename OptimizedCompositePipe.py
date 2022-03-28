@@ -53,12 +53,14 @@ class OptimizedCompositePipe:
         fE_dam_max = max(fEs)
         taf = fE_dam_max
 
-        fE_deform = max(self.material.defor)/0.05
+        deform_idx_max = np.argmax(self.material.defor)
+        fE_deform = self.material.defor[deform_idx_max]/0.05
         min_deform_limited_thickness = self.thickness*fE_deform
 
         if self.thickness*taf < min_deform_limited_thickness:
             self.update_thickness(adjustment_factor=fE_deform)
-            failure_mechanism = "max_deform"
+            midplane_strains = ["long", "trans", "shear"]
+            failure_mechanism = "MD({})".format(midplane_strains[deform_idx_max])
             if self.material.is_FF_damaged:
                 failure_mechanism += "+FF"
             if self.material.is_IFF_damaged:

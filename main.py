@@ -82,7 +82,7 @@ def type_B_optimized_pipe():
     for key in service_loads.keys():
         optimized_thicknesses_3D[key] = []
 
-    n_theta = 200
+    n_theta = 100
 
     for theta_1 in np.linspace(10, 88, n_theta):
         for theta_2 in np.linspace(10, 88, n_theta):
@@ -118,7 +118,9 @@ def type_B_optimized_pipe():
 
 def plot_optimized_case_mpl_2D(optimized_thicknesses: dict[str], case: str) -> None:
     points = optimized_thicknesses[case]
-    possible_failure_mechanisms = ["FF", "FF+IFF", "max_deform", "max_deform+FF", "max_deform+FF+IFF", "max_deform+IFF"]
+    possible_failure_mechanisms = ["FF", "FF+IFF", "MD(long)", "MD(long)+FF", "MD(long)+FF+IFF", "MD(long)+IFF",
+                                   "MD(trans)", "MD(trans)+FF", "MD(trans)+FF+IFF", "MD(trans)+IFF",
+                                   "MD(shear)", "MD(shear)+FF", "MD(shear)+FF+IFF", "MD(shear)+IFF"]
 
     data = {}
     for mechanism in possible_failure_mechanisms:
@@ -143,7 +145,9 @@ def plot_optimized_case_mpl_2D(optimized_thicknesses: dict[str], case: str) -> N
 def plot_optimized_case_mpl_3D(optimized_thicknesses: dict[str], case: str, n: int, plt_heat_map: bool = True,
                                plt_fracture_modes: bool = False) -> None:
     points = optimized_thicknesses[case]
-    possible_failure_mechanisms = ["FF", "FF+IFF", "max_deform", "max_deform+FF", "max_deform+FF+IFF", "max_deform+IFF"]
+    possible_failure_mechanisms = ["FF", "FF+IFF", "MD(long)", "MD(long)+FF", "MD(long)+FF+IFF", "MD(long)+IFF",
+                                   "MD(trans)", "MD(trans)+FF", "MD(trans)+FF+IFF", "MD(trans)+IFF",
+                                   "MD(shear)", "MD(shear)+FF", "MD(shear)+FF+IFF", "MD(shear)+IFF"]
 
     data = {}
     for mechanism in possible_failure_mechanisms:
@@ -182,8 +186,9 @@ def plot_optimized_case_mpl_3D(optimized_thicknesses: dict[str], case: str, n: i
     pass
 
 def main():
-    type_A_optimized_pipe()
-    type_B_optimized_pipe()
+    #type_A_optimized_pipe()
+    #type_B_optimized_pipe()
+    type_C_optimized_pipe()
     pass
 
 
